@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Owner sign in | OPEN द BAG</title>
+  <meta name="description" content="Owner sign in for OPEN द BAG">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="auth-split">
+    <div class="auth-illustration" aria-hidden="true">
+      <img class="illo-bag" src="images/placeholder.svg" alt="">
+    </div>
+
+    <div class="auth-panel">
+      <a class="logo auth-logo" href="index.html"><img src="images/logo.png" alt="OPEN द BAG"></a>
+
+      <div class="auth-flow">
+        <button class="back-button" type="button" onclick="location.href='login.html'">&larr; Back</button>
+        <span class="role-badge">Owner access</span>
+
+        <div class="auth-tabs" role="tablist">
+          <button class="auth-tab" type="button" role="tab" data-tab="login" aria-selected="true">Owner Login</button>
+          <button class="auth-tab" type="button" role="tab" data-tab="signup" aria-selected="false">Create Account</button>
+        </div>
+
+        <form class="auth-form" data-tab="login">
+          <label class="field">
+            <input type="email" name="email" placeholder="Email" required aria-label="Owner email">
+          </label>
+          <label class="field">
+            <input type="password" name="password" placeholder="Password" required minlength="6" aria-label="Owner password">
+            <button class="field-toggle" type="button" aria-label="Show password">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </label>
+          <button class="forgot-link" type="button">Forgot Password?</button>
+
+          <div class="forgot-panel" hidden>
+            <p>We'll email you a link to reset your password.</p>
+            <div class="forgot-form">
+              <label class="field"><input type="email" name="email" placeholder="Email" required aria-label="Reset email"></label>
+              <button class="button" type="button">Send</button>
+            </div>
+            <p class="forgot-message auth-message" role="alert"></p>
+          </div>
+
+          <button class="button" type="submit">Log in</button>
+          <p class="login-message auth-message" role="alert"></p>
+        </form>
+
+        <form class="auth-form" data-tab="signup" hidden>
+          <label class="field"><input type="text" name="name" placeholder="Name" required aria-label="Name"></label>
+          <label class="field"><input type="email" name="email" placeholder="Email" required aria-label="Email"></label>
+          <label class="field">
+            <input type="password" name="password" placeholder="Password" required minlength="6" aria-label="Password">
+            <button class="field-toggle" type="button" aria-label="Show password">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </label>
+          <label class="field">
+            <input type="password" name="confirmPassword" placeholder="Confirm Password" required minlength="6" aria-label="Confirm password">
+            <button class="field-toggle" type="button" aria-label="Show password">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </label>
+          <p class="field-error"></p>
+
+          <button class="button" type="submit">Create Owner Account</button>
+          <p class="signup-message auth-message" role="alert"></p>
+        </form>
+      </div>
+
+      <div class="signed-in" hidden>
+        <h1>You're signed in</h1>
+        <p class="signed-in-email"></p>
+        <button class="button" type="button">Sign out</button>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { app, db, friendlyAuthError } from "./firebase-config.js";
+    import {
+      getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+      sendPasswordResetEmail, onAuthStateChanged, signOut,
+    } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+    import { doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+    const ROLE = "owner";
+    const auth = getAuth(app);
+    const authFlow = document.querySelector(".auth-flow");
+    const signedIn = document.querySelector(".signed-in");
+    const tabs = document.querySelectorAll(".auth-tab");
+    const forms = document.querySelectorAll(".auth-form");
+
+    function showTab(name) {
+      tabs.forEach((tab) => tab.setAttribute("aria-selected", String(tab.dataset.tab === name)));
+      forms.forEach((form) => { form.hidden = form.dataset.tab !== name; });
+    }
+    tabs.forEach((tab) => tab.addEventListener("click", () => showTab(tab.dataset.tab)));
+
+    document.querySelectorAll(".field-toggle").forEach((toggle) => {
+      toggle.addEventListener("click", () => {
+        const input = toggle.previousElementSibling;
+        input.type = input.type === "password" ? "text" : "password";
+        toggle.setAttribute("aria-label", input.type === "password" ? "Show password" : "Hide password");
+      });
+    });
+
+    function withLoading(button, label, task) {
+      const original = button.textContent;
+      button.disabled = true;
+      button.textContent = label;
+      return task().finally(() => {
+        button.disabled = false;
+        button.textContent = original;
+      });
+    }
+
+    // --- Owner login ---
+    const loginForm = document.querySelector('.auth-form[data-tab="login"]');
+    const loginMessage = document.querySelector(".login-message");
+    loginForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      loginMessage.textContent = "";
+      const { email, password } = loginForm.elements;
+      const submit = loginForm.querySelector('button[type="submit"]');
+      withLoading(submit, "Logging in…", () =>
+        signInWithEmailAndPassword(auth, email.value, password.value)
+          .then(async ({ user }) => {
+            const snap = await getDoc(doc(db, "users", user.uid));
+            if (snap.exists() && snap.data().role !== ROLE) {
+              await signOut(auth);
+              loginMessage.textContent = "This isn't an owner account.";
+              return;
+            }
+            location.href = "index.html";
+          })
+          .catch((error) => { loginMessage.textContent = friendlyAuthError(error); })
+      );
+    });
+
+    // --- Forgot password ---
+    const forgotLink = document.querySelector(".forgot-link");
+    const forgotPanel = document.querySelector(".forgot-panel");
+    const forgotForm = document.querySelector(".forgot-form");
+    const forgotMessage = document.querySelector(".forgot-message");
+    forgotLink.addEventListener("click", () => {
+      forgotPanel.hidden = !forgotPanel.hidden;
+      if (!forgotPanel.hidden) forgotEmail.value = loginForm.elements.email.value;
+    });
+    const forgotEmail = forgotForm.querySelector("input");
+    const sendReset = () => {
+      forgotMessage.textContent = "";
+      const submit = forgotForm.querySelector("button");
+      withLoading(submit, "Sending…", () =>
+        sendPasswordResetEmail(auth, forgotEmail.value)
+          .then(() => { forgotMessage.textContent = "Check your inbox for a reset link."; })
+          .catch((error) => { forgotMessage.textContent = friendlyAuthError(error); })
+      );
+    };
+    forgotForm.querySelector("button").addEventListener("click", sendReset);
+    forgotEmail.addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); sendReset(); } });
+
+    // --- Create owner account ---
+    const signupForm = document.querySelector('.auth-form[data-tab="signup"]');
+    const signupMessage = document.querySelector(".signup-message");
+    const confirmError = document.querySelector(".field-error");
+    signupForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      signupMessage.textContent = "";
+      confirmError.textContent = "";
+      const { name, email, password, confirmPassword } = signupForm.elements;
+      if (password.value !== confirmPassword.value) {
+        confirmError.textContent = "Passwords don't match.";
+        return;
+      }
+      const submit = signupForm.querySelector('button[type="submit"]');
+      withLoading(submit, "Creating account…", () =>
+        createUserWithEmailAndPassword(auth, email.value, password.value)
+          .then(({ user }) =>
+            setDoc(doc(db, "users", user.uid), {
+              uid: user.uid,
+              name: name.value,
+              email: email.value,
+              role: ROLE,
+              createdAt: serverTimestamp(),
+            })
+          )
+          .then(() => { location.href = "index.html"; })
+          .catch((error) => { signupMessage.textContent = friendlyAuthError(error); })
+      );
+    });
+
+    document.querySelector(".signed-in button").addEventListener("click", () => signOut(auth));
+
+    onAuthStateChanged(auth, (user) => {
+      authFlow.hidden = Boolean(user);
+      signedIn.hidden = !user;
+      if (user) document.querySelector(".signed-in-email").textContent = user.email || "your account";
+    });
+  </script>
+</body>
+</html>

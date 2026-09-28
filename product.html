@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Product | OPEN द BAG</title>
+  <meta name="description" content="Product details">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <a class="logo" href="index.html"><img src="images/logo.png" alt="OPEN द BAG"></a>
+      <nav class="nav">
+        <a href="index.html">Home</a>
+        <a href="#" aria-current="page">Shop</a>
+        <a href="index.html#new-arrivals">New Arrivals</a>
+        <a href="#">About</a>
+        <a href="#">Contact</a>
+      </nav>
+      <div class="header-actions">
+        <a href="#" aria-label="Search"><svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></a>
+        <a href="#" aria-label="Cart"><svg class="icon" viewBox="0 0 24 24"><path d="M6 7h12l1 13H5L6 7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg></a>
+        <a href="login.html" aria-label="Account"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="container product-details">
+      <div class="image-tile"><img src="images/placeholder.svg" alt=""></div>
+
+      <div>
+        <h1></h1>
+        <p class="product-meta"><span class="rating"></span></p>
+
+        <p class="mrp">MRP: <s></s></p>
+        <p class="price"><span class="selling-price"></span> <span class="discount"></span></p>
+
+        <section class="set-price">
+          <h2>Set Your Price</h2>
+          <p>Set the maximum price you are willing to pay.</p>
+          <form>
+            <label class="field price-field">₹<input name="price" inputmode="numeric" pattern="[0-9]*" title="Enter numbers only" required aria-label="Your price"></label>
+            <button class="button" type="submit">Set My Price</button>
+          </form>
+          <output></output>
+        </section>
+
+        <details class="price-history">
+          <summary>Price History <span class="arrow" aria-hidden="true">→</span></summary>
+          <div class="history-panel">
+            <svg class="price-chart" viewBox="0 0 600 250" role="img" aria-label="Price over the last five changes"></svg>
+            <table class="history-table">
+              <thead>
+                <tr><th>Date</th><th>Previous</th><th>New</th><th>Discount</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <a class="logo" href="index.html"><img src="images/logo.png" alt="OPEN द BAG"></a>
+      <nav class="nav">
+        <a href="#">Shop</a>
+        <a href="#">About</a>
+        <a href="#">Contact</a>
+      </nav>
+      <p>© 2026 OPEN द BAG</p>
+    </div>
+  </footer>
+  <script>
+    // Mock data. Each product's last price is its current selling price.
+    const products = {
+      "everyday-tote": { name: "Everyday Tote", rating: 4.8, reviews: 120, mrp: 1799, prices: [1599, 1699, 1399, 1499, 1299], yourPrice: 1150 },
+      "city-backpack": { name: "City Backpack", rating: 4.7, reviews: 86, mrp: 2599, prices: [2299, 2399, 1999, 2199, 1899], yourPrice: 1750 },
+      "weekender-duffel": { name: "Weekender Duffel", rating: 4.9, reviews: 142, mrp: 3499, prices: [2999, 3199, 2699, 2899, 2499], yourPrice: 2250 },
+      "compact-sling": { name: "Compact Sling", rating: 4.6, reviews: 64, mrp: 1299, prices: [1099, 1199, 949, 999, 899], yourPrice: 800 },
+    };
+    const dates = ["05 Sep", "10 Sep", "15 Sep", "18 Sep", "Today"];
+
+    const page = document.querySelector(".product-details");
+    const $ = (selector) => page.querySelector(selector);
+    const form = $(".set-price form");
+    const message = $(".set-price output");
+
+    const formatPrice = (amount) => `₹${amount.toLocaleString("en-IN")}`;
+    const discountPercent = (mrp, price) => Math.round(((mrp - price) / mrp) * 100);
+
+    function showProduct(id) {
+      const { name, rating, reviews, mrp, prices, yourPrice } = products[id] || products["everyday-tote"];
+      const price = prices.at(-1);
+
+      document.title = `${name} | OPEN द BAG`;
+      $("h1").textContent = name;
+      $(".image-tile img").alt = name;
+      $(".rating").textContent = `${rating} (${reviews} reviews)`;
+      $(".mrp s").textContent = formatPrice(mrp);
+      $(".selling-price").textContent = formatPrice(price);
+      $(".discount").textContent = `${discountPercent(mrp, price)}% OFF`;
+      form.elements.price.value = yourPrice;
+      message.textContent = "";
+
+      // Chart: one bar per price, evenly spaced. Bar height is relative to the lowest and highest price.
+      const max = Math.max(...prices);
+      const min = Math.min(...prices);
+      const bars = prices.map((value, i) => {
+        const height = 50 + ((value - min) / (max - min)) * 110;
+        return { x: 60 + i * 120, top: 210 - height, value };
+      });
+      const latest = bars.at(-1);
+      $(".price-chart").innerHTML = `
+        ${bars.map(({ x, top, value }, i) => `<rect class="${i === bars.length - 1 ? "latest" : ""}" x="${x - 6}" y="${top}" width="12" height="${210 - top}" rx="6"><title>${dates[i]}: ${formatPrice(value)}</title></rect>`).join("")}
+        <g class="tag"><rect x="${latest.x - 50}" y="${latest.top - 48}" width="100" height="34" rx="17"/><text x="${latest.x}" y="${latest.top - 25}">${formatPrice(latest.value)}</text></g>
+        ${dates.map((date, i) => `<text x="${60 + i * 120}" y="242">${date}</text>`).join("")}`;
+
+      // Table: newest first. The first change started from the MRP.
+      $(".history-table tbody").innerHTML = prices
+        .map((value, i) => `<tr><td>${dates[i]}</td><td>${formatPrice(i ? prices[i - 1] : mrp)}</td><td>${formatPrice(value)}</td><td>${discountPercent(mrp, value)}% off</td></tr>`)
+        .reverse()
+        .join("");
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      message.textContent = `Your price is set to ${formatPrice(Number(form.elements.price.value))}.`;
+    });
+
+    showProduct(new URLSearchParams(location.search).get("id"));
+  </script>
+</body>
+</html>
