@@ -94,6 +94,36 @@
     </section>
   </main>
 
+  <script type="module">
+    // Appends any products the owner has added in Firestore after the 4 built-in ones.
+    import { db } from "./firebase-config.js";
+    import {
+      collection, getDocs, query, orderBy,
+    } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+    const grid = document.querySelector(".product-grid");
+
+    getDocs(query(collection(db, "products"), orderBy("createdAt", "desc")))
+      .then((snapshot) => {
+        snapshot.forEach((docSnap) => {
+          const { name, price, rating, image } = docSnap.data();
+          const card = document.createElement("article");
+          card.className = "product-card";
+          card.innerHTML = `
+            <div class="image-tile">
+              <img src="${image || "images/placeholder.svg"}" alt="${name}">
+            </div>
+            <h3>${name}</h3>
+            <p class="product-meta">
+              <span class="rating">${rating || "New"}</span>
+              <span class="price-tag">₹${Number(price).toLocaleString("en-IN")}</span>
+            </p>`;
+          grid.appendChild(card);
+        });
+      })
+      .catch(() => {}); // No Firestore products yet, or offline — the 4 built-in cards still show.
+  </script>
+
   <footer class="footer">
     <div class="container">
       <a class="logo" href="index.html"><img src="images/logo.png" alt="OPEN द BAG"></a>

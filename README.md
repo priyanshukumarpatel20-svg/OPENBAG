@@ -11,6 +11,7 @@ A responsive bag store front-end built with plain HTML, CSS and JavaScript, usin
 | `login.html` | Choose Customer Login or Owner Login |
 | `customer.html` | Customer login, create account, forgot password |
 | `owner.html` | Owner login, create account, forgot password |
+| `owner-dashboard.html` | Owner-only: add a product (name, price, MRP, photo), view and delete products |
 | `firebase-config.js` | Firebase setup, shared by the auth pages |
 | `firestore.rules` | Firestore security rules |
 | `style.css` | All styles |
@@ -43,13 +44,23 @@ One document per user at `users/{uid}`:
 uid, name, email, role ("customer" or "owner"), createdAt
 ```
 
+One document per product at `products/{autoId}`, added from `owner-dashboard.html`:
+
+```
+name, mrp, price, rating (optional), image (compressed base64 JPEG), createdAt
+```
+
+Product photos are compressed in the browser (max 800px wide, JPEG) and stored as base64 directly in the document, the same approach used in an earlier project, to avoid Firebase Storage billing. A typical photo comes out well under Firestore's 1MB document limit.
+
 Passwords are handled only by Firebase Authentication and are never stored by this app.
 
 ## Known limitations
 
 - **Owner sign-up is open.** Anyone who visits `owner.html` can create an owner account. The rules stop a role from being changed later, but they cannot tell who is allowed to register as owner. After you create your own owner account, remove the "Create Account" tab from `owner.html`, or move owner creation to the Firebase console.
-- There are no dashboard pages yet. After sign-in, both roles land on `index.html`.
-- Products, prices and price history are demo data inside `product.html` and `index.html`. They are not in Firestore yet.
+- After customer sign-in, the customer lands on `index.html`. After owner sign-in, the owner lands on `owner-dashboard.html`.
+- Products added from the dashboard appear as new cards on the homepage, but they are not clickable into a detail page yet — `product.html` only knows about the 4 original demo products and their price history. Making owner-added products open their own detail page is a natural next step.
+- Editing a product isn't built yet, only add and delete.
+- The original 4 demo products (Everyday Tote, City Backpack, Weekender Duffel, Compact Sling) are still static HTML, not in Firestore.
 - "Set My Price" only shows a confirmation message. It does not save anything.
 
 ## Deploy on GitHub Pages

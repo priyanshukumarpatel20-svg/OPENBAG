@@ -117,13 +117,17 @@ summary:focus-visible {
   gap: 8px;
 }
 
-.header-actions a {
+.header-actions a,
+.header-actions button {
   display: grid;
   place-items: center;
   width: 44px;
   height: 44px;
+  border: 0;
   border-radius: 50%;
   background: var(--glass-strong);
+  color: inherit;
+  cursor: pointer;
 }
 
 .icon {
@@ -894,6 +898,63 @@ summary:focus-visible {
 
 .signed-in .button {
   margin-top: 20px;
+}
+
+/* Owner dashboard */
+.dashboard {
+  padding-block: clamp(24px, 5vw, 48px);
+}
+
+.dashboard .section-head {
+  margin-top: 40px;
+}
+
+.dashboard .role-badge {
+  font-size: 0.9rem;
+}
+
+.dashboard-card {
+  max-width: 420px;
+}
+
+.product-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.file-field {
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+.file-field input {
+  display: none;
+}
+
+.file-field-label {
+  padding: 14px 0;
+  color: var(--muted);
+}
+
+.image-preview {
+  width: 96px;
+  height: 96px;
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+.dashboard-list {
+  margin-top: 48px;
+  margin-bottom: 80px;
+}
+
+.empty-message {
+  color: var(--muted);
+}
+
+.delete-button {
+  font-size: 1.1rem;
 }
 
 /* Tablet and up */

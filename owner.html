@@ -137,7 +137,7 @@
               loginMessage.textContent = "This isn't an owner account.";
               return;
             }
-            location.href = "index.html";
+            location.href = "owner-dashboard.html";
           })
           .catch((error) => { loginMessage.textContent = friendlyAuthError(error); })
       );
@@ -190,7 +190,7 @@
               createdAt: serverTimestamp(),
             })
           )
-          .then(() => { location.href = "index.html"; })
+          .then(() => { location.href = "owner-dashboard.html"; })
           .catch((error) => { signupMessage.textContent = friendlyAuthError(error); })
       );
     });
